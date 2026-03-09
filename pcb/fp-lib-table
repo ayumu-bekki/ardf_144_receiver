@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "ARDFReceiverLibrary")(type "KiCad")(uri "${KIPRJMOD}/ARDFReceiverLibrary.pretty")(options "")(descr ""))
+)
