@@ -40,13 +40,22 @@ class SignalMeterTask final : public Task {
   static constexpr adc_channel_t kAdcChannel = ADC_CHANNEL_1;  // GPIO1
 
   // Sampling configuration
-  static constexpr int kAdcSampleCount = 10;  // Number of samples to average
+  static constexpr int kAdcSampleCount =
+      hardware_config::kSignalMeterAdcSampleCount;
+  static constexpr uint32_t kSampleIntervalMs =
+      hardware_config::kSignalMeterSampleIntervalMs;
 
   // S-meter calibration (AGC逆特性: 信号強→電圧低)
   static constexpr int kAgcNoSignalVoltage =
       hardware_config::kSmeterAgcNoSignalVoltage;
   static constexpr int kAgcFullSignalVoltage =
       hardware_config::kSmeterAgcFullSignalVoltage;
+
+  // S値の最大値 (0-9)
+  static constexpr int kAgcSValueMax = hardware_config::kSmeterSValueMax;
+
+  // S-meter パーセント基準値 (0-100%)
+  static constexpr int kSmeterPercentMax = hardware_config::kSmeterPercentMax;
 
   // EMAフィルタ平滑化係数
   static constexpr float kEmaAlpha = hardware_config::kSmeterEmaAlpha;
@@ -74,7 +83,7 @@ class SignalMeterTask final : public Task {
   // Returns: ADC raw voltage in mV
   int GetAdcRawValue() const;
 
-  uint32_t GetLastUpdateTime() const;
+  int64_t GetLastUpdateTime() const;
 
   // S-meter calculation based on AGC inverse characteristic:
   // >= 1126mV (no signal) -> 0%
@@ -84,19 +93,20 @@ class SignalMeterTask final : public Task {
  private:
   void MeasureSignalStrength();
   int CalculateSignalStrength(int adc_voltage_mv);
-  int CalculateSmeterRaw(int adc_voltage_mv);  // Calculate 0-100 value for S-meter
+  int CalculateSmeterRaw(
+      int adc_voltage_mv);  // Calculate 0-100 value for S-meter
   void UpdatePeakValue(int signal_strength, int smeter_raw);
 
  private:
   mutable std::mutex mutex_;
-  int signal_strength_;           // Current signal strength (0-100, logarithmic)
-  int peak_signal_strength_;      // Peak signal strength (0-100, logarithmic)
-  int smeter_raw_;                // S-meter raw value (0-100, linear)
-  int peak_smeter_raw_;           // Peak S-meter raw value (0-100, linear)
-  int adc_raw_value_;             // ADC filtered voltage in mV (EMA applied)
-  float ema_voltage_mv_;          // EMA filter state (-1 = uninitialized)
-  uint32_t last_update_time_;     // Last update time (ms)
-  uint32_t peak_update_time_;     // Peak update time (ms)
+  int signal_strength_;        // Current signal strength (0-100, logarithmic)
+  int peak_signal_strength_;   // Peak signal strength (0-100, logarithmic)
+  int smeter_raw_;             // S-meter raw value (0-100, linear)
+  int peak_smeter_raw_;        // Peak S-meter raw value (0-100, linear)
+  int adc_raw_value_;         // ADC filtered voltage in mV (EMA applied)
+  float ema_voltage_mv_;      // EMA filter state (-1 = uninitialized)
+  int64_t last_update_time_;  // Last update time (ms)
+  int64_t peak_update_time_;  // Peak update time (ms)
 };
 
 /*

@@ -18,6 +18,9 @@ class MCP4018 {
   static constexpr uint8_t kWiperMin = 0;
   static constexpr uint8_t kWiperMax = 127;
 
+  // 書き込みビットマスク: 上位1ビット(bit7)は無視されるため7bitマスクを適用
+  static constexpr uint8_t kWiperWriteMask = 0x7F;
+
  public:
   MCP4018();
   ~MCP4018();

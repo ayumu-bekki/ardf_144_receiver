@@ -6,6 +6,7 @@
 #include "adc_util.h"
 
 #include "logger.h"
+#include "util.h"
 
 namespace receiver_system {
 namespace adc_util {
@@ -16,7 +17,7 @@ static adc_cali_handle_t g_adc_cali_handle = nullptr;
 static bool g_adc_calibrated = false;
 
 bool InitializeAdcUnit() {
-  if (g_adc_handle != nullptr) {
+  if (g_adc_handle) {
     ESP_LOGW(kTag, "ADC unit already initialized");
     return true;
   }
@@ -44,7 +45,8 @@ bool InitializeAdcUnit() {
     ESP_LOGI(kTag, "ADC unit initialized with calibration (Curve Fitting)");
   } else {
     g_adc_calibrated = false;
-    ESP_LOGW(kTag, "ADC unit initialized without calibration (using raw conversion)");
+    ESP_LOGW(kTag,
+             "ADC unit initialized without calibration (using raw conversion)");
   }
 
   ESP_LOGI(kTag, "ADC unit initialized: Unit=%d, Attenuation=%d, Bitwidth=%d",
@@ -53,20 +55,14 @@ bool InitializeAdcUnit() {
   return true;
 }
 
-adc_oneshot_unit_handle_t GetAdcUnitHandle() {
-  return g_adc_handle;
-}
+adc_oneshot_unit_handle_t GetAdcUnitHandle() { return g_adc_handle; }
 
-adc_cali_handle_t GetAdcCaliHandle() {
-  return g_adc_cali_handle;
-}
+adc_cali_handle_t GetAdcCaliHandle() { return g_adc_cali_handle; }
 
-bool IsAdcCalibrated() {
-  return g_adc_calibrated;
-}
+bool IsAdcCalibrated() { return g_adc_calibrated; }
 
 bool ConfigureChannel(adc_channel_t channel) {
-  if (g_adc_handle == nullptr) {
+  if (!g_adc_handle) {
     ESP_LOGE(kTag, "ADC unit not initialized");
     return false;
   }
@@ -77,7 +73,8 @@ bool ConfigureChannel(adc_channel_t channel) {
 
   esp_err_t ret = adc_oneshot_config_channel(g_adc_handle, channel, &config);
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "Failed to configure ADC channel %d: %s", channel, esp_err_to_name(ret));
+    ESP_LOGE(kTag, "Failed to configure ADC channel %d: %s", channel,
+             esp_err_to_name(ret));
     return false;
   }
 
@@ -86,19 +83,20 @@ bool ConfigureChannel(adc_channel_t channel) {
 }
 
 bool ReadRaw(adc_channel_t channel, int* out_raw) {
-  if (g_adc_handle == nullptr) {
+  if (!g_adc_handle) {
     ESP_LOGE(kTag, "ADC unit not initialized");
     return false;
   }
 
-  if (out_raw == nullptr) {
+  if (!out_raw) {
     ESP_LOGE(kTag, "out_raw is null");
     return false;
   }
 
   esp_err_t ret = adc_oneshot_read(g_adc_handle, channel, out_raw);
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "ADC read failed on channel %d: %s", channel, esp_err_to_name(ret));
+    ESP_LOGE(kTag, "ADC read failed on channel %d: %s", channel,
+             esp_err_to_name(ret));
     return false;
   }
 
@@ -106,7 +104,7 @@ bool ReadRaw(adc_channel_t channel, int* out_raw) {
 }
 
 bool ReadVoltage(adc_channel_t channel, int* out_voltage_mv) {
-  if (out_voltage_mv == nullptr) {
+  if (!out_voltage_mv) {
     ESP_LOGE(kTag, "out_voltage_mv is null");
     return false;
   }
@@ -119,19 +117,45 @@ bool ReadVoltage(adc_channel_t channel, int* out_voltage_mv) {
 
   // Convert to voltage
   if (g_adc_calibrated) {
-    esp_err_t ret = adc_cali_raw_to_voltage(g_adc_cali_handle, adc_raw, out_voltage_mv);
+    esp_err_t ret =
+        adc_cali_raw_to_voltage(g_adc_cali_handle, adc_raw, out_voltage_mv);
     if (ret != ESP_OK) {
-      ESP_LOGE(kTag, "ADC calibration conversion failed: %s", esp_err_to_name(ret));
+      ESP_LOGE(kTag, "ADC calibration conversion failed: %s",
+               esp_err_to_name(ret));
       return false;
     }
   } else {
     // Fallback: simple linear conversion (not accurate)
-    // 12-bit ADC: 0-4095 -> 0-3300mV
-    *out_voltage_mv = (adc_raw * 3300) / 4095;
+    *out_voltage_mv = (adc_raw * kAdcFallbackMaxMv) / kAdcFallbackMaxRaw;
   }
 
   return true;
 }
+
+bool ReadVoltageAveraged(adc_channel_t channel, int sample_count,
+                         uint32_t sample_interval_ms, int* out_voltage_mv) {
+  int sum = 0;
+  int success_count = 0;
+
+  for (int i = 0; i < sample_count; ++i) {
+    int voltage_mv = 0;
+    if (ReadVoltage(channel, &voltage_mv)) {
+      sum += voltage_mv;
+      ++success_count;
+    }
+    if (sample_interval_ms > 0 && i < sample_count - 1) {
+      util::SleepMillisecond(sample_interval_ms);
+    }
+  }
+
+  if (success_count == 0) {
+    return false;
+  }
+
+  *out_voltage_mv = sum / success_count;
+  return true;
+}
+
 
 }  // namespace adc_util
 }  // namespace receiver_system

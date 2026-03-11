@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "hardware_config.h"
 
@@ -74,13 +75,14 @@ class SSD1306 {
   void DrawRect(int16_t x, int16_t y, int16_t w, int16_t h, bool color);
   void FillRect(int16_t x, int16_t y, int16_t w, int16_t h, bool color);
   void DrawChar(int16_t x, int16_t y, char c, bool color, uint8_t size);
-  void DrawString(int16_t x, int16_t y, const char* str, bool color, uint8_t size);
+  void DrawString(int16_t x, int16_t y, const char* str, bool color,
+                  uint8_t size);
   void DrawLargeChar(int16_t x, int16_t y, char c, bool color);
   void DrawLargeString(int16_t x, int16_t y, const char* str, bool color);
   int16_t MeasureLargeString(const char* str) const;
   void DrawSpeakerIcon(int16_t x, int16_t y, bool color);
   void DrawBatteryIcon(int16_t x, int16_t y, int16_t fill_level, bool color);
-  void DrawBadge(int16_t x, int16_t y, int16_t w, int16_t h, const char* text);
+  void DrawBadge(int16_t x, int16_t y);
   void DrawLogoIcon(int16_t x, int16_t y, bool color);
   void SetContrast(uint8_t contrast);
   void InvertDisplay(bool invert);
@@ -93,14 +95,14 @@ class SSD1306 {
   void InitializeDisplay();
 
   // Display initialization parameter values
-  static constexpr uint8_t kInitClockDiv = 0xF0;         // High frequency
-  static constexpr uint8_t kInitContrast = 0x8F;         // Default contrast
-  static constexpr uint8_t kInitPrecharge = 0xF1;        // Precharge period
-  static constexpr uint8_t kInitVcomhDeselect = 0x40;    // VCOMH voltage
-  static constexpr uint8_t kInitChargePumpOn = 0x14;     // Charge pump enabled
-  static constexpr uint8_t kInitCompinsConfig = 0x02;    // 128x32 config
-  static constexpr uint8_t kInitMemoryMode = 0x00;       // Horizontal mode
-  static constexpr uint8_t kInitSegmentRemap = 0x01;     // Remap enabled
+  static constexpr uint8_t kInitClockDiv = 0xF0;       // High frequency
+  static constexpr uint8_t kInitContrast = 0x8F;       // Default contrast
+  static constexpr uint8_t kInitPrecharge = 0xF1;      // Precharge period
+  static constexpr uint8_t kInitVcomhDeselect = 0x40;  // VCOMH voltage
+  static constexpr uint8_t kInitChargePumpOn = 0x14;   // Charge pump enabled
+  static constexpr uint8_t kInitCompinsConfig = 0x02;  // 128x32 config
+  static constexpr uint8_t kInitMemoryMode = 0x00;     // Horizontal mode
+  static constexpr uint8_t kInitSegmentRemap = 0x01;   // Remap enabled
 
   // Font constants
   static constexpr uint8_t kFontWidth = 5;
@@ -115,23 +117,24 @@ class SSD1306 {
   static constexpr uint8_t kLargeFontCharSpacing = 11;  // 10 + 1 pixel gap
 
   // Data transfer constants
-  static constexpr size_t kDataChunkSize = hardware_config::kDisplayDataChunkSize;
+  static constexpr size_t kDataChunkSize =
+      hardware_config::kDisplayDataChunkSize;
 
   // Pixel manipulation bit constants
-  static constexpr uint8_t kPixelBitMask = 0x07;      // (y & 7) - 3-bit mask
-  static constexpr uint8_t kPixelByteShift = 3;       // y / 8 = y >> 3
-  static constexpr uint8_t kPageEndAddr = 3;          // (kHeight/8) - 1
-  static constexpr uint8_t kColumnEndAddr = 127;      // kWidth - 1
+  static constexpr uint8_t kPixelBitMask = 0x07;  // (y & 7) - 3-bit mask
+  static constexpr uint8_t kPixelByteShift = 3;   // y / 8 = y >> 3
+  static constexpr uint8_t kPageEndAddr = 3;      // (kHeight/8) - 1
+  static constexpr uint8_t kColumnEndAddr = 127;  // kWidth - 1
 
  private:
   i2c_master_dev_handle_t dev_handle_;
   uint8_t i2c_address_;
-  uint8_t* buffer_;
-  uint8_t* prev_buffer_;
+  std::vector<uint8_t> buffer_;
+  std::vector<uint8_t> prev_buffer_;
 };
 
-using SSD1306UniquePtr = std::unique_ptr<SSD1306>;
 using SSD1306SharedPtr = std::shared_ptr<SSD1306>;
+using SSD1306WeakPtr = std::weak_ptr<SSD1306>;
 
 }  // namespace receiver_system
 

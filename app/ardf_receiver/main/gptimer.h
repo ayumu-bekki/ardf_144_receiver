@@ -13,7 +13,7 @@ class GPTimer {
   ~GPTimer() { Destroy(); }
 
   void Create(const uint32_t resolution, gptimer_alarm_cb_t function,
-              void *const user_data) {
+              void* const user_data) {
     // Create Timer
     gptimer_config_t timer_config = {.clk_src = GPTIMER_CLK_SRC_DEFAULT,
                                      .direction = GPTIMER_COUNT_UP,

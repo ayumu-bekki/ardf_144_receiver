@@ -39,8 +39,8 @@ void SignalMeterTask::Initialize() {
 
   ESP_LOGI(kTag, "ADC channel %d configured successfully", kAdcChannel);
 
-  // Skip initial measurement to avoid interfering with I2C device initialization
-  // Measurement will start in Update() loop
+  // Skip initial measurement to avoid interfering with I2C device
+  // initialization Measurement will start in Update() loop
 }
 
 void SignalMeterTask::Update() {
@@ -78,42 +78,26 @@ int SignalMeterTask::GetAdcRawValue() const {
   return adc_raw_value_;
 }
 
-uint32_t SignalMeterTask::GetLastUpdateTime() const {
+int64_t SignalMeterTask::GetLastUpdateTime() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return last_update_time_;
 }
 
 void SignalMeterTask::MeasureSignalStrength() {
-  // Take multiple samples and average them to reduce noise
-  int adc_voltage_sum = 0;
-  int valid_samples = 0;
-
-  for (int i = 0; i < kAdcSampleCount; ++i) {
-    int adc_voltage_mv = 0;
-
-    if (adc_util::ReadVoltage(kAdcChannel, &adc_voltage_mv)) {
-      adc_voltage_sum += adc_voltage_mv;
-      valid_samples++;
-    }
-
-    // Small delay between samples (1ms)
-    util::SleepMillisecond(1);
-  }
-
-  if (valid_samples == 0) {
-    ESP_LOGE(kTag, "Failed to read any ADC samples from channel %d", kAdcChannel);
+  int adc_voltage_mv = 0;
+  if (!adc_util::ReadVoltageAveraged(kAdcChannel, kAdcSampleCount,
+                                     kSampleIntervalMs, &adc_voltage_mv)) {
+    ESP_LOGE(kTag, "Failed to read any ADC samples from channel %d",
+             kAdcChannel);
     return;
   }
 
-  // Calculate average
-  int adc_voltage_mv = adc_voltage_sum / valid_samples;
-
   // EMAフィルタ適用
   if (ema_voltage_mv_ < 0) {
-    ema_voltage_mv_ = static_cast<float>(adc_voltage_mv);  // 初回は即値で初期化
+    ema_voltage_mv_ = static_cast<float>(adc_voltage_mv);
   } else {
-    ema_voltage_mv_ = kEmaAlpha * static_cast<float>(adc_voltage_mv)
-                    + (1.0f - kEmaAlpha) * ema_voltage_mv_;
+    ema_voltage_mv_ = kEmaAlpha * static_cast<float>(adc_voltage_mv) +
+                      (1.0f - kEmaAlpha) * ema_voltage_mv_;
   }
   int filtered_voltage_mv = static_cast<int>(ema_voltage_mv_);
 
@@ -147,18 +131,23 @@ void SignalMeterTask::MeasureSignalStrength() {
     // Linear interpolation: 1126mV->S0, 800mV->S9
     float voltage_range = kAgcNoSignalVoltage - kAgcFullSignalVoltage;  // 326mV
     float voltage_offset = kAgcNoSignalVoltage - filtered_voltage_mv;
-    s_meter = static_cast<int>((voltage_offset / voltage_range) * 9.0f);
-    if (s_meter < 0) s_meter = 0;
-    if (s_meter > 9) s_meter = 9;
+    s_meter = static_cast<int>((voltage_offset / voltage_range) *
+                               static_cast<float>(kAgcSValueMax));
+    if (s_meter < 0) {
+      s_meter = 0;
+    }
+    if (s_meter > kAgcSValueMax) {
+      s_meter = kAgcSValueMax;
+    }
   }
 
   // Calculate peak S-meter
-  int peak_s_meter = (peak_smeter_raw_ * 9) / 100;
-  if (peak_s_meter > 9) {
-    peak_s_meter = 9;
+  int peak_s_meter = (peak_smeter_raw_ * kAgcSValueMax) / kSmeterPercentMax;
+  if (peak_s_meter > kAgcSValueMax) {
+    peak_s_meter = kAgcSValueMax;
   }
 
-  ESP_LOGI(kTag, "ADC: %4dmV ema:%4dmV | raw:%3d peak:%3d | S%d (peak S%d)",
+  ESP_LOGD(kTag, "ADC: %4dmV ema:%4dmV | raw:%3d peak:%3d | S%d (peak S%d)",
            adc_voltage_mv, filtered_voltage_mv, smeter_raw, peak_smeter_raw_,
            s_meter, peak_s_meter);
 }
@@ -172,15 +161,16 @@ int SignalMeterTask::CalculateSmeterRaw(int adc_voltage_mv) {
     return 100;
   }
 
-  // 線形補間: 1126mV→0%, 800mV→100%
-  float voltage_range = kAgcNoSignalVoltage - kAgcFullSignalVoltage;  // 326mV
+  // 線形補間: kAgcNoSignalVoltage→0%, kAgcFullSignalVoltage→100%
+  float voltage_range = kAgcNoSignalVoltage - kAgcFullSignalVoltage;
   float voltage_offset = kAgcNoSignalVoltage - adc_voltage_mv;
-  int smeter_raw = static_cast<int>((voltage_offset / voltage_range) * 100.0f);
-  if (smeter_raw < 0) {
-    smeter_raw = 0;
+  int smeter_raw = static_cast<int>(
+      (voltage_offset / voltage_range) * static_cast<float>(kSmeterPercentMax));
+  if (smeter_raw < kSignalStrengthMin) {
+    smeter_raw = kSignalStrengthMin;
   }
-  if (smeter_raw > 100) { 
-    smeter_raw = 100;
+  if (smeter_raw > kSmeterPercentMax) {
+    smeter_raw = kSmeterPercentMax;
   }
 
   return smeter_raw;
@@ -192,9 +182,11 @@ int SignalMeterTask::CalculateSignalStrength(int adc_voltage_mv) {
     return 0;
   }
   // 対数変換: linear=1→～17, linear=100→100
-  float log_val = log10f(static_cast<float>(linear)) / log10f(100.0f) * 100.0f;
+  float log_val = log10f(static_cast<float>(linear)) /
+                  log10f(static_cast<float>(kSmeterPercentMax)) *
+                  static_cast<float>(kSmeterPercentMax);
   int result = static_cast<int>(log_val);
-  if (result < 0) { 
+  if (result < 0) {
     result = 0;
   } else if (result > 100) {
     result = 100;
@@ -204,7 +196,7 @@ int SignalMeterTask::CalculateSignalStrength(int adc_voltage_mv) {
 
 void SignalMeterTask::UpdatePeakValue(int signal_strength, int smeter_raw) {
   // This method is called from within a locked context, so no mutex needed
-  uint32_t current_time = esp_timer_get_time() / 1000;
+  int64_t current_time = esp_timer_get_time() / 1000;
 
   // Update peak if current value is higher
   if (signal_strength > peak_signal_strength_) {

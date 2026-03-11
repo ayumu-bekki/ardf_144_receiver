@@ -3,8 +3,6 @@
 
 #include "receiver_settings.h"
 
-#include <nvs_flash.h>
-
 #include "logger.h"
 
 namespace receiver_system {
@@ -16,27 +14,7 @@ ReceiverSettings::ReceiverSettings()
       preamp_enabled_(kDefaultPreamp),
       volume_(kDefaultVolume) {}
 
-ReceiverSettings::~ReceiverSettings() {
-  CloseNvsHandle();
-}
-
-bool ReceiverSettings::InitializeNvs() {
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_LOGW(kTag, "NVS needs erase, erasing...");
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-  }
-
-  if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "NVS init failed: %s", esp_err_to_name(ret));
-    return false;
-  }
-
-  ESP_LOGI(kTag, "NVS initialized");
-  return true;
-}
+ReceiverSettings::~ReceiverSettings() { CloseNvsHandle(); }
 
 bool ReceiverSettings::OpenNvsHandle() {
   if (nvs_handle_open_) {

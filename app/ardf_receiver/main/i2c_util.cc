@@ -24,16 +24,15 @@ void InitializeMaster(const gpio_num_t sda_pin, const gpio_num_t scl_pin) {
 
   esp_err_t ret = i2c_new_master_bus(&bus_config, &g_bus_handle);
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "Failed to initialize I2C master bus: %s", esp_err_to_name(ret));
+    ESP_LOGE(kTag, "Failed to initialize I2C master bus: %s",
+             esp_err_to_name(ret));
   } else {
     ESP_LOGI(kTag, "I2C master bus initialized (%ukHz, SDA=%d, SCL=%d)",
              i2c_util::kI2cMasterFrequencyHz / 1000, sda_pin, scl_pin);
   }
 }
 
-i2c_master_bus_handle_t GetBusHandle() {
-  return g_bus_handle;
-}
+i2c_master_bus_handle_t GetBusHandle() { return g_bus_handle; }
 
 }  // namespace i2c_util
 }  // namespace receiver_system

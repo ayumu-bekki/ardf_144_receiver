@@ -4,17 +4,12 @@
 // Include ----------------------
 #include "util.h"
 
-#include <esp_sntp.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <lwip/err.h>
-#include <lwip/sys.h>
+#include <nvs_flash.h>
 
-#include <cmath>
-#include <iomanip>
 #include <sstream>
 
-#include "gpio_control.h"
 #include "logger.h"
 
 namespace receiver_system {
@@ -36,6 +31,24 @@ std::vector<std::string> SplitString(const std::string& str, const char delim) {
     }
   }
   return elements;
+}
+
+bool InitializeNvs() {
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_LOGW(kTag, "NVS needs erase, erasing...");
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+
+  if (ret != ESP_OK) {
+    ESP_LOGE(kTag, "NVS init failed: %s", esp_err_to_name(ret));
+    return false;
+  }
+
+  ESP_LOGI(kTag, "NVS initialized");
+  return true;
 }
 
 }  // namespace util

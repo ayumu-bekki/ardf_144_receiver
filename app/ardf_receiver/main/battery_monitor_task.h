@@ -37,6 +37,17 @@ class BatteryMonitorTask final : public Task {
   static constexpr float kVoltageDividerRatio =
       kVoltageDividerR2 / (kVoltageDividerR1 + kVoltageDividerR2);
 
+  // Number of ADC samples to average
+  static constexpr int kAdcSampleCount =
+      hardware_config::kBatteryAdcSampleCount;
+
+  // ADC offset correction (mV)
+  static constexpr int kAdcOffsetCorrectionMv =
+      hardware_config::kBatteryAdcOffsetCorrectionMv;
+
+  // mV → V 変換係数
+  static constexpr float kMvToVoltsFactor = 1000.0f;
+
   // ADC configuration
   static constexpr adc_channel_t kAdcChannel = ADC_CHANNEL_0;  // GPIO0
 
@@ -49,7 +60,7 @@ class BatteryMonitorTask final : public Task {
 
   // Thread-safe battery voltage reading
   float GetBatteryVoltage() const;
-  uint32_t GetLastUpdateTime() const;
+  int64_t GetLastUpdateTime() const;
 
  private:
   void MeasureBatteryVoltage();
@@ -57,8 +68,8 @@ class BatteryMonitorTask final : public Task {
 
  private:
   mutable std::mutex mutex_;
-  float battery_voltage_;              // Latest battery voltage (V)
-  uint32_t last_update_time_;          // Last update time (ms)
+  float battery_voltage_;     // Latest battery voltage (V)
+  int64_t last_update_time_;  // Last update time (ms)
 };
 
 }  // namespace receiver_system

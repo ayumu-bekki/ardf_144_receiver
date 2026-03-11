@@ -16,7 +16,12 @@ namespace adc_util {
 constexpr adc_unit_t kAdcUnit = ADC_UNIT_1;
 constexpr adc_atten_t kAdcAttenuation = ADC_ATTEN_DB_12;  // 0-3.3V
 constexpr adc_bitwidth_t kAdcBitwidth = ADC_BITWIDTH_12;  // 12-bit
-constexpr int kAdcTimeoutMs = 1000;  // 1 second timeout
+constexpr int kAdcTimeoutMs = 1000;                       // 1 second timeout
+
+// フォールバック線形変換係数 (キャリブレーション未使用時)
+// 12-bit ADC: raw 0-4095 → 0-3300mV
+constexpr int kAdcFallbackMaxMv = 3300;
+constexpr int kAdcFallbackMaxRaw = 4095;
 
 // Initialize ADC unit (call once at startup)
 // Returns true on success
@@ -42,6 +47,11 @@ bool ReadRaw(adc_channel_t channel, int* out_raw);
 // Read ADC voltage from a channel (using calibration if available)
 // Returns true on success, voltage in mV in *out_voltage_mv
 bool ReadVoltage(adc_channel_t channel, int* out_voltage_mv);
+
+// 複数サンプリング平均（サンプル間に sample_interval_ms のスリープを挟む）。
+// 1サンプルでも成功すれば true を返す。sample_interval_ms = 0 の場合はスリープなし。
+bool ReadVoltageAveraged(adc_channel_t channel, int sample_count,
+                         uint32_t sample_interval_ms, int* out_voltage_mv);
 
 }  // namespace adc_util
 }  // namespace receiver_system

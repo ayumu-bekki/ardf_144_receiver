@@ -23,15 +23,10 @@ class ReceiverSystemInterface {
 
   // Battery voltage
   virtual float GetBatteryVoltage() const = 0;
-
-  // Display control methods
-  virtual void UpdateDisplay(uint8_t cursor_pos, uint32_t freq_hz,
-                            bool preamp, uint8_t volume, float battery_voltage,
-                            int signal_strength, int peak_signal_strength) = 0;
-  virtual void SetDisplayOn(bool on) = 0;
 };
 
-using ReceiverSystemInterfaceSharedPtr = std::shared_ptr<ReceiverSystemInterface>;
+using ReceiverSystemInterfaceSharedPtr =
+    std::shared_ptr<ReceiverSystemInterface>;
 using ReceiverSystemInterfaceConstSharedPtr =
     std::shared_ptr<const ReceiverSystemInterface>;
 using ReceiverSystemInterfaceWeakPtr = std::weak_ptr<ReceiverSystemInterface>;

@@ -4,8 +4,10 @@
 // (C)2025 bekki.jp
 
 // Include ----------------------
-#include <cstdint>
 #include <nvs.h>
+
+#include <cstdint>
+#include <memory>
 
 namespace receiver_system {
 
@@ -14,9 +16,6 @@ class ReceiverSettings final {
  public:
   ReceiverSettings();
   ~ReceiverSettings();
-
-  // NVS Initialization (call once at startup)
-  static bool InitializeNvs();
 
   // Load settings from NVS (call at startup)
   bool Load();
@@ -52,6 +51,9 @@ class ReceiverSettings final {
   static constexpr bool kDefaultPreamp = true;
   static constexpr uint8_t kDefaultVolume = 15;
 };
+
+using ReceiverSettingsSharedPtr = std::shared_ptr<ReceiverSettings>;
+using ReceiverSettingsWeakPtr = std::weak_ptr<ReceiverSettings>;
 
 }  // namespace receiver_system
 

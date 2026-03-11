@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <esp_err.h>
+
 namespace receiver_system {
 namespace util {
 
@@ -16,6 +18,9 @@ void SleepMillisecond(const uint32_t sleep_milliseconds);
 
 /// Split Text
 std::vector<std::string> SplitString(const std::string& str, const char delim);
+
+/// Initialize NVS flash (call once at startup)
+bool InitializeNvs();
 
 }  // namespace util
 }  // namespace receiver_system

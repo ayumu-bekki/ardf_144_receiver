@@ -50,8 +50,7 @@ class GpioInputWatchTask final : public Task {
       kStatusLongPressed,
     };
 
-    GpioInfo(gpio_num_t gpio_no,
-             ButtonEvent::Button button_id,
+    GpioInfo(gpio_num_t gpio_no, ButtonEvent::Button button_id,
              MessageQueue<ButtonEvent>* event_queue)
         : gpio_no_(gpio_no),
           cnt_(0),
@@ -102,9 +101,10 @@ class GpioInputWatchTask final : public Task {
         // Button is released
         if (status_ != Status::kStatusIdle) {
           if (event_queue_) {
-            // Flush stale LongPress events before sending Release,
-            // so the UI thread sees Release immediately.
-            event_queue_->Reset();
+            // Send Release event. UI side drains stale LongPress events
+            // from the queue. Do NOT call Reset() here because multiple
+            // buttons share the same queue, and Reset() would discard
+            // events from other buttons.
             event_queue_->Send({button_id_, ButtonEvent::Type::kRelease});
           }
           status_ = Status::kStatusIdle;
@@ -198,7 +198,6 @@ class GpioInputWatchTask final : public Task {
   GPTimer gptimer_;
   std::vector<GpioInfo> gpio_list_;
 };
-
 
 }  // namespace receiver_system
 

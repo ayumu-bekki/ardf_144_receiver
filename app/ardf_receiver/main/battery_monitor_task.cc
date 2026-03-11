@@ -48,15 +48,15 @@ float BatteryMonitorTask::GetBatteryVoltage() const {
   return battery_voltage_;
 }
 
-uint32_t BatteryMonitorTask::GetLastUpdateTime() const {
+int64_t BatteryMonitorTask::GetLastUpdateTime() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return last_update_time_;
 }
 
 void BatteryMonitorTask::MeasureBatteryVoltage() {
-  // Read ADC voltage using shared utility
   int adc_voltage_mv = 0;
-  if (!adc_util::ReadVoltage(kAdcChannel, &adc_voltage_mv)) {
+  if (!adc_util::ReadVoltageAveraged(kAdcChannel, kAdcSampleCount, 0,
+                                     &adc_voltage_mv)) {
     ESP_LOGE(kTag, "Failed to read ADC voltage");
     return;
   }
@@ -71,14 +71,17 @@ void BatteryMonitorTask::MeasureBatteryVoltage() {
     last_update_time_ = esp_timer_get_time() / 1000;
   }
 
-  ESP_LOGI(kTag, "Battery voltage: %.2f V (ADC: %d mV)",
-           battery_voltage, adc_voltage_mv);
+  ESP_LOGI(kTag, "Battery voltage: %.2f V (ADC: %d mV)", battery_voltage,
+           adc_voltage_mv);
 }
 
 float BatteryMonitorTask::CalculateBatteryVoltage(int adc_voltage_mv) {
+  // Apply offset correction for ESP32-C6 ADC systematic error
+  int corrected_mv = adc_voltage_mv + kAdcOffsetCorrectionMv;
+
   // Convert ADC voltage to battery voltage using voltage divider formula
   // V_battery = V_adc / (R2 / (R1 + R2))
-  float adc_voltage_v = static_cast<float>(adc_voltage_mv) / 1000.0f;
+  float adc_voltage_v = static_cast<float>(corrected_mv) / kMvToVoltsFactor;
   float battery_voltage_v = adc_voltage_v / kVoltageDividerRatio;
   return battery_voltage_v;
 }
