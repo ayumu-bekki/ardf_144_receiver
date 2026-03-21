@@ -120,8 +120,8 @@ void SignalMeterTask::MeasureSignalStrength() {
   }
 
   // Calculate S-meter value (0-9) based on AGC inverse characteristic
-  // >= 1126mV (no signal) -> S0
-  // <= 800mV (full signal) -> S9
+  // >= 1075mV (no signal) -> S0
+  // <= 920mV (full signal) -> S9
   int s_meter = 0;
   if (filtered_voltage_mv >= kAgcNoSignalVoltage) {
     s_meter = 0;

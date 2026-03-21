@@ -6,9 +6,9 @@
 // Include ----------------------
 #include <esp_log.h>
 
-// systen Loglevel Redefine
+// Enable all log levels up to Verbose at compile time
 #undef LOG_LOCAL_LEVEL
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 
 namespace receiver_system {
 

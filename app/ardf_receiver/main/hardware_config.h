@@ -64,9 +64,9 @@ constexpr uint32_t kSignalMeterPeakHoldMs = 3000;  // 3 seconds
 
 // S-meter calibration (AGC逆特性: 信号強→電圧低)
 // 無信号時の上限電圧（この値以上は 0% とみなす）
-constexpr int kSmeterAgcNoSignalVoltage = 1126;  // mV
+constexpr int kSmeterAgcNoSignalVoltage = 1075;  // mV
 // 強電界時の下限電圧（この値以下は 100% とクリップ）
-constexpr int kSmeterAgcFullSignalVoltage = 800;  // mV
+constexpr int kSmeterAgcFullSignalVoltage = 920;  // mV
 
 // EMAフィルタ平滑化係数 (0.0〜1.0)
 // 小さいほど平滑・応答遅延増、大きいほど追従速・ノイズ多

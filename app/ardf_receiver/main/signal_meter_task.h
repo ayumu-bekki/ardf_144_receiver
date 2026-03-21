@@ -86,8 +86,8 @@ class SignalMeterTask final : public Task {
   int64_t GetLastUpdateTime() const;
 
   // S-meter calculation based on AGC inverse characteristic:
-  // >= 1126mV (no signal) -> 0%
-  // <= 800mV (full signal) -> 100%
+  // >= 1075mV (no signal) -> 0%
+  // <= 920mV (full signal) -> 100%
   // Linear interpolation, then logarithmic for display
 
  private:

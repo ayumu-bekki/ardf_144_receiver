@@ -8,14 +8,10 @@ namespace receiver_system {
 namespace logger {
 
 void InitializeLogLevel() {
-#if CONFIG_DEBUG != 0
-  esp_log_level_set("*", ESP_LOG_INFO);
-  esp_log_level_set(kTag, ESP_LOG_VERBOSE);
-  ESP_LOGD(kTag, "DEBUG MODE");
-#else
   esp_log_level_set("*", ESP_LOG_WARN);
-  esp_log_level_set(kTag, ESP_LOG_INFO);
-#endif
+  esp_log_level_set(kTag, CONFIG_LOG_DEFAULT_LEVEL >= ESP_LOG_VERBOSE
+                              ? ESP_LOG_VERBOSE
+                              : ESP_LOG_INFO);
 }
 
 }  // namespace logger
