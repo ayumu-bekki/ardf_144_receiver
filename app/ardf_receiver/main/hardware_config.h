@@ -17,20 +17,20 @@ namespace hardware_config {
 // ============================================================================
 
 // I2C Bus Pins
-constexpr gpio_num_t kI2cSdaPin = xiao_esp32c6_pin::kSda;  // D4
-constexpr gpio_num_t kI2cSclPin = xiao_esp32c6_pin::kScl;  // D5
+constexpr gpio_num_t kI2cSdaPin = xiao_esp32c6_pin::kSda;
+constexpr gpio_num_t kI2cSclPin = xiao_esp32c6_pin::kScl;
 
 // Preamp Control
-constexpr gpio_num_t kPreampEnablePin = xiao_esp32c6_pin::kD6;  // D6
+constexpr gpio_num_t kPreampEnablePin = xiao_esp32c6_pin::kD6;
 
 // Button Inputs
-constexpr gpio_num_t kButtonSelectPin = xiao_esp32c6_pin::kD8;  // D8
-constexpr gpio_num_t kButtonPlusPin = xiao_esp32c6_pin::kD9;    // D9
-constexpr gpio_num_t kButtonMinusPin = xiao_esp32c6_pin::kD10;  // D10
+constexpr gpio_num_t kButtonSelectPin = xiao_esp32c6_pin::kD10; 
+constexpr gpio_num_t kButtonPlusPin = xiao_esp32c6_pin::kD9;
+constexpr gpio_num_t kButtonMinusPin = xiao_esp32c6_pin::kD8;
 
 // ADC Input
-constexpr gpio_num_t kBatteryVoltagePin = xiao_esp32c6_pin::kA0;       // A0
-constexpr gpio_num_t kSignalStrengthMeterPin = xiao_esp32c6_pin::kA1;  // A1
+constexpr gpio_num_t kBatteryVoltagePin = xiao_esp32c6_pin::kA0;
+constexpr gpio_num_t kSignalStrengthMeterPin = xiao_esp32c6_pin::kA1;
 
 // ============================================================================
 // Battery Monitoring Configuration
@@ -108,8 +108,7 @@ constexpr uint32_t kMainLoopSleepMs = 1000;
 // ============================================================================
 
 constexpr i2c_port_t kI2cPort = I2C_NUM_0;
-constexpr uint32_t kI2cFrequencyHz =
-    100000;  // 100kHz standard mode (for stability)
+constexpr uint32_t kI2cFrequencyHz = 100000;
 
 // I2C Timeout (in FreeRTOS ticks)
 constexpr TickType_t kI2cTimeoutTicks = 1000 / portTICK_PERIOD_MS;
