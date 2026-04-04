@@ -1,5 +1,7 @@
 #include "ssd1306.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <rom/ets_sys.h>
 
 #include <algorithm>
@@ -207,7 +209,6 @@ void SSD1306::Display() {
   if (buffer_ == prev_buffer_) {
     return;
   }
-
   WriteCommand(kCmdColumnAddr);
   WriteCommand(0);
   WriteCommand(kColumnEndAddr);
@@ -740,7 +741,13 @@ void SSD1306::WriteCommand(const uint8_t cmd) {
   esp_err_t ret = i2c_master_transmit(dev_handle_, write_buf, sizeof(write_buf),
                                       i2c_util::kI2cTimeoutMs);
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "SSD1306 command write failed: %s", esp_err_to_name(ret));
+    ESP_LOGE(kTag, "SSD1306 cmd write failed (cmd=0x%02X): %s", cmd,
+             esp_err_to_name(ret));
+    i2c_master_bus_handle_t bus = i2c_util::GetBusHandle();
+    if (bus) {
+      i2c_master_bus_reset(bus);
+      vTaskDelay(pdMS_TO_TICKS(5));
+    }
   }
 }
 
@@ -764,8 +771,13 @@ void SSD1306::WriteData(const uint8_t* data, size_t len) {
     esp_err_t ret = i2c_master_transmit(
         dev_handle_, write_buf, current_chunk + 1, i2c_util::kI2cTimeoutMs);
     if (ret != ESP_OK) {
-      ESP_LOGE(kTag, "SSD1306 data write failed at offset %zu: %s", i,
-               esp_err_to_name(ret));
+      ESP_LOGE(kTag, "SSD1306 data write failed at offset %zu len %zu: %s", i,
+               current_chunk, esp_err_to_name(ret));
+      i2c_master_bus_handle_t bus = i2c_util::GetBusHandle();
+      if (bus) {
+        i2c_master_bus_reset(bus);
+        vTaskDelay(pdMS_TO_TICKS(5));
+      }
       break;
     }
   }

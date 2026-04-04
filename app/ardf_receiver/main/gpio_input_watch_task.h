@@ -21,7 +21,7 @@ namespace receiver_system {
 class GpioInputWatchTask final : public Task {
  public:
   static constexpr std::string_view TASK_NAME = "GpioInputWatchTask";
-  static constexpr int32_t PRIORITY = Task::PRIORITY_LOW;
+  static constexpr int32_t PRIORITY = Task::PRIORITY_NORMAL;
   static constexpr int32_t CORE_ID = PRO_CPU_NUM;
 
  private:

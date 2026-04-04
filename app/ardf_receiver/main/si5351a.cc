@@ -1,5 +1,7 @@
 #include "si5351a.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <rom/ets_sys.h>
 
 #include <cmath>
@@ -141,6 +143,9 @@ void Si5351A::SetFrequency(const Clk clk, const uint32_t freq) {
   // PLL周波数を設定
   SetPLL(reg_pll, pll_mult, pll_num, denom);
 
+  // Yield to let IDLE task feed WDT between bulk register writes
+  taskYIELD();
+
   // MultiSynth分周器とR分周器を設定
   SetMultiSynth(reg_multisynth, multisynth_div, rdiv_bits);
 
@@ -165,8 +170,8 @@ void Si5351A::Write(const uint8_t reg, const uint8_t value) {
   esp_err_t ret = i2c_master_transmit(dev_handle_, write_buf, sizeof(write_buf),
                                       i2c_util::kI2cTimeoutMs);
   if (ret != ESP_OK) {
-    ESP_LOGE(kTag, "Si5351A write failed (reg=0x%02X): %s", reg,
-             esp_err_to_name(ret));
+    ESP_LOGE(kTag, "Si5351A write failed (reg=0x%02X, val=0x%02X): %s", reg,
+             value, esp_err_to_name(ret));
   }
 }
 

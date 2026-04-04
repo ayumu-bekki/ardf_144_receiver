@@ -42,6 +42,8 @@ UiControllerTask::UiControllerTask(ReceiverSystemInterfaceWeakPtr interface,
   if (auto iface = interface_.lock()) {
     iface->SetFrequency(frequency_hz_);
     iface->SetPreampEnable(preamp_enabled_);
+    // Brief delay after Si5351A bulk register writes to let I2C bus settle
+    vTaskDelay(pdMS_TO_TICKS(10));
     iface->SetVolume(volume_);
     UpdateDisplay();
   }
@@ -107,8 +109,6 @@ void UiControllerTask::OnButtonSelect() {
   // Move cursor to next menu item
   current_menu_item_ =
       static_cast<MenuItem>((current_menu_item_ + 1) % kMenuItemCount);
-
-  UpdateDisplay();
 }
 
 void UiControllerTask::OnButtonPlus() {
@@ -135,7 +135,7 @@ void UiControllerTask::OnButtonPlusLongPress() {
   if (current_menu_item_ == kMenuFrequency) {
     UpdateFrequency(+1, false);  // Don't save immediately during long press
   } else if (current_menu_item_ == kMenuVolume) {
-    UpdateVolume(+1, false);  // Don't save immediately during long press
+    UpdateVolume(+1, false);  // Apply to device, save on release
   }
 }
 
@@ -143,7 +143,7 @@ void UiControllerTask::OnButtonMinusLongPress() {
   if (current_menu_item_ == kMenuFrequency) {
     UpdateFrequency(-1, false);  // Don't save immediately during long press
   } else if (current_menu_item_ == kMenuVolume) {
-    UpdateVolume(-1, false);  // Don't save immediately during long press
+    UpdateVolume(-1, false);  // Apply to device, save on release
   }
 }
 
@@ -172,7 +172,6 @@ void UiControllerTask::UpdateFrequency(int32_t delta_10khz,
 
   if (auto iface = interface_.lock()) {
     iface->SetFrequency(frequency_hz_);
-    UpdateDisplay();
   }
 
   if (save_immediately) {
@@ -195,7 +194,6 @@ void UiControllerTask::UpdatePreamp(bool enable) {
 
   if (auto iface = interface_.lock()) {
     iface->SetPreampEnable(preamp_enabled_);
-    UpdateDisplay();
   }
 
   // Save immediately to NVS
@@ -218,7 +216,6 @@ void UiControllerTask::UpdateVolume(int32_t delta, bool save_immediately) {
 
   if (auto iface = interface_.lock()) {
     iface->SetVolume(volume_);
-    UpdateDisplay();
   }
 
   if (save_immediately) {

@@ -108,7 +108,7 @@ constexpr uint32_t kMainLoopSleepMs = 1000;
 // ============================================================================
 
 constexpr i2c_port_t kI2cPort = I2C_NUM_0;
-constexpr uint32_t kI2cFrequencyHz = 100000;
+constexpr uint32_t kI2cFrequencyHz = 400000;
 
 // I2C Timeout (in FreeRTOS ticks)
 constexpr TickType_t kI2cTimeoutTicks = 1000 / portTICK_PERIOD_MS;
@@ -140,9 +140,9 @@ constexpr int32_t kLongPressThresholdCount =
     kLongPressThresholdMs / kPollingIntervalMs;  // = 60
 
 // Long press repeat rate (in polling intervals)
-constexpr int32_t kLongPressRepeatMs = 20;  // 20ms between repeats
+constexpr int32_t kLongPressRepeatMs = 100;  // 100ms between repeats
 constexpr int32_t kLongPressRepeatIntervalCount =
-    kLongPressRepeatMs / kPollingIntervalMs;  // = 4
+    kLongPressRepeatMs / kPollingIntervalMs;  // = 20
 
 // Timer resolution for GPIO polling
 constexpr uint32_t kGpioTimerResolutionUs = 1000000;  // 1 microsecond
@@ -231,7 +231,9 @@ constexpr uint8_t kDisplayContrastDimmed = 0x01;
 // ============================================================================
 
 // SSD1306 I2C data transfer chunk size (bytes)
-constexpr size_t kDisplayDataChunkSize = 16;
+// 512 bytes = full frame buffer, sent in a single I2C transaction.
+// Minimizes bus START/STOP overhead and NACK opportunities.
+constexpr size_t kDisplayDataChunkSize = 512;
 
 }  // namespace hardware_config
 }  // namespace receiver_system

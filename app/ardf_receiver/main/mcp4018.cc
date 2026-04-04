@@ -1,5 +1,8 @@
 #include "mcp4018.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <memory>
 
 #include "hardware_config.h"
@@ -71,11 +74,14 @@ void MCP4018::Write(const uint8_t value) {
   esp_err_t ret =
       i2c_master_transmit(dev_handle_, &write_buf, 1, i2c_util::kI2cTimeoutMs);
   if (ret != ESP_OK) {
-    util::SleepMillisecond(hardware_config::kMcp4018RetryDelayMs);
+    // Yield before retry
+    vTaskDelay(pdMS_TO_TICKS(hardware_config::kMcp4018RetryDelayMs));
+
     ret = i2c_master_transmit(dev_handle_, &write_buf, 1,
                               i2c_util::kI2cTimeoutMs);
     if (ret != ESP_OK) {
-      ESP_LOGE(kTag, "MCP4018 I2C write failed: %s", esp_err_to_name(ret));
+      ESP_LOGW(kTag, "MCP4018 I2C write failed (val=%u): %s", write_buf,
+               esp_err_to_name(ret));
     }
   }
 }

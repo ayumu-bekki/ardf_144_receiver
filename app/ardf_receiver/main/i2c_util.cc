@@ -29,6 +29,10 @@ void InitializeMaster(const gpio_num_t sda_pin, const gpio_num_t scl_pin) {
   } else {
     ESP_LOGI(kTag, "I2C master bus initialized (%ukHz, SDA=%d, SCL=%d)",
              i2c_util::kI2cMasterFrequencyHz / 1000, sda_pin, scl_pin);
+
+    // Recover I2C bus in case a device is holding SDA low from a previous
+    // incomplete transaction (e.g. brownout reset mid-transfer).
+    i2c_master_bus_reset(g_bus_handle);
   }
 }
 

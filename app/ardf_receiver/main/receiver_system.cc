@@ -71,12 +71,13 @@ void ReceiverSystem::Start() {
     ESP_LOGE(kTag, "Failed to initialize ADC unit");
   }
 
+  // Wait for I2C devices to be ready after power-on before first access.
+  // Si5351A requires time for internal crystal oscillator to stabilize.
+  util::SleepMillisecond(hardware_config::kI2cBusStabilizeDelayMs);
+
   si5351a_.Setup(Si5351A::kI2cDefaultAddr);
   mcp4018_.Setup();
   ssd1306_->Setup(SSD1306::kI2cDefaultAddr);
-
-  // I2Cデバイス初期化後、バスが安定するまで待機
-  util::SleepMillisecond(hardware_config::kI2cBusStabilizeDelayMs);
 
   // Initialize Preamp GPIO
   gpio_config_t preamp_gpio_conf = {
