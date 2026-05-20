@@ -45,5 +45,5 @@ idf.py flash monitor
 
 ## ライセンス
 
-本プロジェクトは [MIT License](LICENSE) のもとで公開されています。
+本プロジェクトは [Apache License 2.0](LICENSE) のもとで公開されています。
 Copyright (c) 2026 Ayumu Bekki
